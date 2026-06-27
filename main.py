@@ -9,7 +9,7 @@ import yt_dlp
 
 # --- CONFIGURATION & ENV ---
 # Securely fetch token from Render Environment Variables
-BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
+BOT_TOKEN = os.getenv("8997633460:AAFq1LY4etrdxVyCPQdRc77lk8eFEb6l0ms", "8997633460:AAFq1LY4etrdxVyCPQdRc77lk8eFEb6l0ms")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # --- DECODING SECURED LINKS ---
