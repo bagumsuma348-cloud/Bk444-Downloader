@@ -2,18 +2,15 @@ import telebot
 from telebot import types
 import yt_dlp
 import os
-import time
-import base64
 import logging
 from flask import Flask, request
-import threading
 
 # ========================= CONFIGURATION =========================
-BOT_TOKEN = "8916971089:AAGdbevtF44LK5WYgDZWo_yms00aPHX_b2w"   # ←←← YE ZARUR CHANGE KARO
+BOT_TOKEN = "8916971089:AAGdbevtF44LK5WYgDZWo_yms00aPHX_b2w"   # ←←← এটা অবশ্যই CHANGE করো
 
 # Branded links (base64 hidden)
-YOUTUBE_CHANNEL = base64.b64decode("aHR0cHM6Ly93d3cueW91dHViZS5jb20vQEJrTWlhNDQ0=").decode('utf-8')
-SUPPORT_CHANNEL = base64.b64decode("aHR0cHM6Ly95b3V0dWJlLmNvbS9zaG9ydHMvMHZHOVc3ajE3azA/c2k9RFJNemFHc2dTaGVkNWtSSA==").decode('utf-8')
+YOUTUBE_CHANNEL = "https://www.youtube.com/@Bk_Mia444"  # base64 decode করে সরাসরি রাখলাম
+SUPPORT_CHANNEL = "https://youtube.com/shorts/0vG9W7j17k0?si=DRMzAGsgShed5kIH"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,6 +30,19 @@ def webhook():
         bot.process_new_updates([update])
         return 'OK', 200
     return 'Bad Request', 400
+
+# ========================= PROGRESS HOOK =========================
+def update_progress(d, status_msg):
+    if d['status'] == 'downloading':
+        try:
+            percent = d.get('_percent_str', '0%').strip()
+            bot.edit_message_text(
+                chat_id=status_msg.chat.id,
+                message_id=status_msg.message_id,
+                text=f"⚡ Downloading... {percent}"
+            )
+        except:
+            pass
 
 # ========================= BOT COMMANDS =========================
 @bot.message_handler(commands=['start'])
@@ -62,36 +72,45 @@ def handle_video_link(message):
     status_msg = bot.reply_to(message, "🔍 Analyzing link...")
 
     try:
-        # Enhanced yt-dlp options for better YouTube + Instagram support
+        # ✅ Improved yt-dlp options for YouTube + Instagram Reels (2026)
         ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',  # Better quality selector
+            'format': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
             'outtmpl': 'video_%(id)s.%(ext)s',
             'merge_output_format': 'mp4',
             'noplaylist': True,
             'quiet': True,
             'no_warnings': True,
             'prefer_free_formats': True,
+            
             'postprocessors': [{
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': 'mp4',
             }],
-            # Additional options for Instagram & YouTube
+            
             'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
             },
+            
+            # ✅ Best extractor settings for YouTube & Instagram
             'extractor_args': {
-                'youtube': {'player_client': ['ios', 'web']},  # Helps with YouTube
-                'instagram': {'player_client': ['ios']},
+                'youtube': {
+                    'player_client': ['ios', 'web', 'android', 'web_embedded'],
+                },
+                'instagram': {
+                    'player_client': ['ios', 'android'],
+                },
             },
-            'retries': 3,
-            'fragment_retries': 3,
+            
+            'retries': 5,
+            'fragment_retries': 5,
+            'socket_timeout': 30,
+            'progress_hooks': [lambda d: update_progress(d, status_msg)],
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             filename = ydl.prepare_filename(info)
 
-            # Show progress
             bot.edit_message_text(
                 chat_id=status_msg.chat.id,
                 message_id=status_msg.message_id,
@@ -103,14 +122,14 @@ def handle_video_link(message):
         bot.edit_message_text(
             chat_id=status_msg.chat.id,
             message_id=status_msg.message_id,
-            text="📤 Uploading to Telegram (100%)..."
+            text="📤 Uploading to Telegram..."
         )
 
         with open(filename, 'rb') as f:
             bot.send_video(
                 message.chat.id,
                 f,
-                caption="✅ Downloaded Successfully! \n\n🔥 Powered by: @Bk666767786",
+                caption="✅ Downloaded Successfully!\n\n🔥 Powered by: @Bk_Mia444_BOT",
                 supports_streaming=True
             )
 
@@ -125,19 +144,19 @@ def handle_video_link(message):
 
     except Exception as e:
         logger.error(str(e))
-        error_msg = str(e)[:150]
+        error_msg = str(e)[:200]
         try:
             bot.edit_message_text(
                 chat_id=status_msg.chat.id,
                 message_id=status_msg.message_id,
-                text=f"❌ Error: {error_msg}\n\nTry again or check link."
+                text=f"❌ Error: {error_msg}\n\nTry again or check the link."
             )
         except:
             pass
 
 # ========================= START FLASK + WEBHOOK =========================
 if __name__ == "__main__":
-    # Auto set webhook (Render ke liye perfect)
+    # Auto set webhook for Render
     hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
     if hostname:
         webhook_url = f"https://{hostname}/{BOT_TOKEN}"
@@ -147,6 +166,6 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Webhook set failed: {e}")
 
-    # Run Flask (Render iska port expect karta hai)
+    # Run Flask
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
