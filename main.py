@@ -13,7 +13,7 @@ BOT_TOKEN = "8916971089:AAGdbevtF44LK5WYgDZWo_yms00aPHX_b2w"   # ←←← YE ZA
 
 # Branded links (base64 hidden)
 YOUTUBE_CHANNEL = base64.b64decode("aHR0cHM6Ly93d3cueW91dHViZS5jb20vQEJrTWlhNDQ0=").decode('utf-8')
-SUPPORT_CHANNEL = base64.b64decode("aHR0cHM6Ly90Lm1lL0JLNDQ0X09mZmljaWFs=").decode('utf-8')
+SUPPORT_CHANNEL = base64.b64decode("aHR0cHM6Ly95b3V0dWJlLmNvbS9zaG9ydHMvMHZHOVc3ajE3azA/c2k9RFJNemFHc2dTaGVkNWtSSA==").decode('utf-8')
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
